@@ -11,7 +11,7 @@
 
 void error_handling(char *message);
 void save_file(char *message);
-void load_file(char **message, int *cnt);
+int load_file(char **cache);
 void print_host(char *message);
 
 int main(int argc, char **argv)
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     int sock;
     struct sockaddr_in serv_addr;
     char message[BUFSIZE];
-    char cache[MAXCACHESIZE][BUFSIZE] = {""};
+    char **cache;
     int str_len;
     int cnt = 0;
     int i = 0;
@@ -30,7 +30,9 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    load_file(cache, &cnt);
+    cache = (char**)calloc(MAXCACHESIZE,sizeof(char*));
+    cnt = load_file(cache);
+    printf("cnt > %d\n", cnt);
 
     sock=socket(PF_INET,SOCK_STREAM,0);
     if(sock==-1) error_handling("socket() error");
@@ -98,14 +100,16 @@ int main(int argc, char **argv)
         // host info save
         strcat(key, "\t");
         strcat(key, message);
-        strcpy(cache[cnt++], key);
+        cache[cnt] = (char*)calloc(strlen(key)+1, sizeof(char));
+        strcpy(cache[cnt], key);
+        cnt++;
 
         // print host
         print_host(message);
         save_file(key);
     }
 
-
+    free(cache);
     close(sock);
     return 0;
 }
@@ -126,19 +130,24 @@ void save_file(char *message) {
     fclose(f);
 }
 
-void load_file(char **message, int *cnt) {
-    FILE *f = fopen("cache.dat", "a");
-    if(!f) return;
+int load_file(char **cache) {
+    FILE *f = fopen("cache.dat", "r");
+    char line[BUFSIZE] = "";
+    int cnt = 0;
+    if(!f) return cnt;
 
     // 파일 한줄씩 읽기
+    while(!feof(f)) {
+        fgets(line,BUFSIZE-1,f);
+        if(line[0] == 0) return 0;
 
-    while(1) {
-        fgets(~~);
+        cache[cnt] = (char*)calloc(strlen(line)+1, sizeof(char));
+        strcpy(cache[cnt], line);
         cnt++;
     }
 
-
     fclose(f);
+    return --cnt;
 }
 
 void print_host(char *message) {
