@@ -10,12 +10,14 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <ctype.h>
+#include <time.h>
 
 #define BUFSIZE 1024
 
 void error_handling(char *message);
 void z_handler(int sig);
 int domain_check(char *src);
+void save_log(char *client_ip, char *msg);
 
 struct sockaddr_in addr;
 
@@ -74,7 +76,7 @@ int main(int argc, char **argv)
         }
 
         else if( pid>0 ) {                             /* 부모 프로세스인 경우 */
-            puts("연결 생성");
+            save_log(inet_ntoa(clnt_addr.sin_addr), "connect client");
             close(clnt_sock);
             continue;
         }
@@ -85,7 +87,6 @@ int main(int argc, char **argv)
             while(1) {
                 str_len = read(clnt_sock, message, BUFSIZE);
                 if(str_len <= 0) break;
-                printf("read > %s\n", message);
 
                 struct hostent *host = NULL; // Test
 
@@ -137,12 +138,12 @@ int main(int argc, char **argv)
                 memset(message, 0, BUFSIZE);
                 strcpy(message, result);
 
-                printf("msg > %s", message);
-                printf("write > success\n\n");
                 write(clnt_sock, message, strlen(message));
+
+
                 memset(message, 0, BUFSIZE);
             }
-            puts("연결 종료");
+            save_log(inet_ntoa(clnt_addr.sin_addr), "disconnect client");
             close(clnt_sock);
             exit(0);
         }
@@ -156,9 +157,6 @@ void z_handler(int sig)
     int rtn;
 
     pid=waitpid(-1, &rtn, WNOHANG);
-    printf("소멸된 좀비의 프로세스 ID : %d \n", pid);
-    printf("리턴된 데이터 : %d \n\n", WEXITSTATUS(rtn));
-
 }
 void error_handling(char *message)
 {
@@ -175,4 +173,23 @@ int domain_check(char *src) {
         if(isalpha(src[i]) == 0) return 0;
     }
     return 1;
+}
+
+void save_log(char *client_ip, char *msg) {
+    FILE *f = fopen("log.dat", "a");
+
+    if(!f) return;
+
+    char datetime[30] = "";
+    struct tm *t;
+
+    time_t curdatetime;
+    time(&curdatetime);
+    t = localtime(&curdatetime);
+
+    strftime(datetime, 30, "%Y%m%d %H:%M:%S" ,t);
+    fprintf(f, "%s %s %s\n", datetime, client_ip, msg);
+    printf("%s %s %s\n", datetime, client_ip, msg);
+
+    fclose(f);
 }

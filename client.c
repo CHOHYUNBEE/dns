@@ -6,8 +6,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+
+
 #define BUFSIZE 1024
 #define MAXCACHESIZE 100
+
 
 void error_handling(char *message);
 void save_file(char *message);
@@ -32,7 +35,6 @@ int main(int argc, char **argv)
 
     cache = (char**)calloc(MAXCACHESIZE,sizeof(char*));
     cnt = load_file(cache);
-    printf("cnt > %d\n", cnt);
 
     sock=socket(PF_INET,SOCK_STREAM,0);
     if(sock==-1) error_handling("socket() error");
