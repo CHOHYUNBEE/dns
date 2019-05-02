@@ -185,6 +185,7 @@ int domainorip(char *src) {
     return 1;
 }
 
+//로그 파일을 만들기 위한 함수 [클라이언트의 방문 년월일과 시간, IP와 연결이 끊어졌을 때의 시간 및 정보]
 void logfile(char *client_ip, char *msg) {
     FILE *f = fopen("log.dat", "a");
 

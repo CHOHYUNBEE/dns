@@ -70,6 +70,7 @@ int main(int argc, char **argv)
             strcpy(temp, cache[i]);
 
             token = strtok(temp, "\t");
+            //캐시에 등록되어있는 도메인이나 ip라면
             if(!strcmp(temp, message)) {
                 check = 1;
                 printf("\ncached data\n\n");
@@ -131,7 +132,7 @@ void save_file(char *message) {
     fclose(f);
 }
 
-//
+//캐시 파일에 저장하기 위한 함수 배열로 [입력한 도메인 또는 ip, host_name, hosttype, hostlengh,aliases,address_list의 정보]
 int load_file(char **cache) {
     FILE *f = fopen("cache.dat", "r");
     char line[BUFSIZE] = "";
@@ -180,6 +181,7 @@ void print_hostinfo(char *message) {
     printf("\n");
 }
 
+//printhostinfo 함수에서 aliases와 address의 출력을 위해 비교하는 함수
 int domainorip(char *src) {
     int count = 0;
 
