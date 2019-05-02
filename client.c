@@ -87,7 +87,9 @@ int main(int argc, char **argv)
         char key[BUFSIZE] = "";
         strcpy(key, message);
 
+        memset(message, 0, BUFSIZE);
         read(sock, message, BUFSIZE);
+        message[strlen(message)] = 0;
 
         if(strlen(message) <= 0) {
             printf("read error\nretry\n");
