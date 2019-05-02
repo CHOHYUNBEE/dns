@@ -16,8 +16,8 @@
 
 void error_handling(char *message);
 void z_handler(int sig);
-int domain_check(char *src);
-void save_log(char *client_ip, char *msg);
+int domainorip(char *src);
+void logfile(char *client_ip, char *msg);
 
 struct sockaddr_in addr;
 
@@ -76,7 +76,8 @@ int main(int argc, char **argv)
         }
 
         else if( pid>0 ) {                             /* 부모 프로세스인 경우 */
-            save_log(inet_ntoa(clnt_addr.sin_addr), "connect client");
+            //log 정보 파일 (클라이언트가 검색을 시작했을 때)
+            logfile(inet_ntoa(clnt_addr.sin_addr), "connect client");
             close(clnt_sock);
             continue;
         }
@@ -95,8 +96,8 @@ int main(int argc, char **argv)
                 char result[BUFSIZE] = "";
                 char buf[BUFSIZE] = "";
 
-                // domain or ip
-                if(domain_check(message)) {
+                // 도메인인지 아이피인지 확인하여 정보 가져오기
+                if(domainorip(message)) {
                     host = gethostbyname(message);
                 }
                 else {
@@ -104,7 +105,7 @@ int main(int argc, char **argv)
                     addr.sin_addr.s_addr = inet_addr(message);
                     host = gethostbyaddr((char*)&addr.sin_addr, 4, AF_INET);
                 }
-
+                // 호스트의 값이 없으면
                 if(host == NULL) {
                     memset(message, 0, BUFSIZE);
                     strcpy(message, "host not found\n");
@@ -112,6 +113,8 @@ int main(int argc, char **argv)
                     memset(message, 0, BUFSIZE);
                     continue;
                 }
+
+                //hostent에 있는 이름 주소타입 등의 정보를 result 배열에 저장
                 strcat(result, host->h_name);
                 strcat(result, " ");
 
@@ -143,7 +146,8 @@ int main(int argc, char **argv)
 
                 memset(message, 0, BUFSIZE);
             }
-            save_log(inet_ntoa(clnt_addr.sin_addr), "disconnect client");
+            // log 정보 파일 (클라이언트가 검색을 끝냈을 때)
+            logfile(inet_ntoa(clnt_addr.sin_addr), "disconnect client");
             close(clnt_sock);
             exit(0);
         }
@@ -165,31 +169,37 @@ void error_handling(char *message)
     exit(1);
 }
 
-int domain_check(char *src) {
+int domainorip(char *src) {
+    int count = 0;
+
     for(int i=0; src[i]; i++) {
         if(src[i] == '.') {
+            count++;
             continue;
         }
-        if(isalpha(src[i]) == 0) return 0;
+        if(isalpha(src[i]) == 0) {
+            count++;
+        }
     }
+    if(strlen(src) == count) return 0;
     return 1;
 }
 
-void save_log(char *client_ip, char *msg) {
+void logfile(char *client_ip, char *msg) {
     FILE *f = fopen("log.dat", "a");
 
     if(!f) return;
 
-    char datetime[30] = "";
+    char dateandtime[30] = "";
     struct tm *t;
 
     time_t curdatetime;
     time(&curdatetime);
     t = localtime(&curdatetime);
 
-    strftime(datetime, 30, "%Y%m%d %H:%M:%S" ,t);
-    fprintf(f, "%s %s %s\n", datetime, client_ip, msg);
-    printf("%s %s %s\n", datetime, client_ip, msg);
+    strftime(dateandtime, 30, "%Y.%m.%d %H:%M:%S" ,t);
+    fprintf(f, "%s %s %s\n", dateandtime, client_ip, msg);
+    printf("%s %s %s\n", dateandtime, client_ip, msg);
 
     fclose(f);
 }

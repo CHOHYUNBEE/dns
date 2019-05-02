@@ -5,8 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
-
+#include <ctype.h>
 
 #define BUFSIZE 1024
 #define MAXCACHESIZE 100
@@ -15,7 +14,8 @@
 void error_handling(char *message);
 void save_file(char *message);
 int load_file(char **cache);
-void print_host(char *message);
+void print_hostinfo(char *message);
+int domainorip(char *src);
 
 int main(int argc, char **argv)
 {
@@ -63,7 +63,6 @@ int main(int argc, char **argv)
             continue;
         }
 
-        // search array
         int check = 0;
         for(int i=0; i < cnt; i++) {
             char *token = NULL;
@@ -75,7 +74,7 @@ int main(int argc, char **argv)
                 check = 1;
                 printf("\ncached data\n\n");
                 token = strtok(NULL, "\t");
-                print_host(token);
+                print_hostinfo(token);
             }
         }
         if(check) {
@@ -99,15 +98,15 @@ int main(int argc, char **argv)
             continue;
         }
 
-        // host info save
+        // 호스트 정보 저장
         strcat(key, "\t");
         strcat(key, message);
         cache[cnt] = (char*)calloc(strlen(key)+1, sizeof(char));
         strcpy(cache[cnt], key);
         cnt++;
 
-        // print host
-        print_host(message);
+        //호스트 출력
+        print_hostinfo(message);
         save_file(key);
     }
 
@@ -132,6 +131,7 @@ void save_file(char *message) {
     fclose(f);
 }
 
+//
 int load_file(char **cache) {
     FILE *f = fopen("cache.dat", "r");
     char line[BUFSIZE] = "";
@@ -152,17 +152,46 @@ int load_file(char **cache) {
     return --cnt;
 }
 
-void print_host(char *message) {
+//호스트의 정보를 배열로 받아와 보기 좋게 출력하는 함수
+void print_hostinfo(char *message) {
     char *token = NULL;
-
+    int i=0,j=0;
     if(message == NULL) return;
 
     token = strtok(message, " ");
-    printf("\n%s\n", token);
+    printf("\nofficial name: %s\n", token);
+    token = strtok(NULL," ");
+    printf("host address type: %s\n", token);
+    token = strtok(NULL," ");
+    printf("lengh of host address: %s\n", token);
 
     while(token = strtok(NULL," ")) {
-        printf("%s\n", token);
+        if(!token) continue;
+        if(!strcmp(token, "\n")) continue;
+        if (domainorip(token)) {
+            printf("aliases[%d]: %s\n", i ,token);
+            i++;
+        } else{
+            printf("address_list[%d]:%s\n", j,token);
+            j++;
+        }
     }
 
     printf("\n");
+}
+
+int domainorip(char *src) {
+    int count = 0;
+
+    for(int i=0; src[i]; i++) {
+        if(src[i] == '.') {
+            count++;
+            continue;
+        }
+        if(isalpha(src[i]) == 0) {
+            count++;
+        }
+    }
+    if(strlen(src) == count) return 0;
+    return 1;
 }
